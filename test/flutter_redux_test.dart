@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redux/redux.dart';
+
+import 'package:flutter_redux/flutter_redux.dart';
 
 void main() {
   group('StoreProvider', () {
@@ -58,7 +59,7 @@ void main() {
       final captor =
           tester.firstWidget<StoreCaptor>(find.byKey(StoreCaptor.captorKey));
 
-      expect(captor.store.state, 'A');
+      expect(captor.store?.state, 'A');
     });
   });
 
@@ -69,6 +70,7 @@ void main() {
         store: Store<String>(identityReducer, initialState: 'I'),
         child: StoreBuilder<String>(
           builder: (context, store) {
+            if (store == null) return Container();
             return Text(
               store.state,
               textDirection: TextDirection.ltr,
@@ -89,6 +91,7 @@ void main() {
         child: StoreConnector<String, String>(
           converter: selector,
           builder: (context, latest) {
+            if (latest == null) return Container();
             return Text(
               latest,
               textDirection: TextDirection.ltr,
@@ -109,6 +112,7 @@ void main() {
         child: StoreConnector<String, String>(
           converter: (_) => throw StateError('A'),
           builder: (context, latest) {
+            if (latest == null) return Container();
             return Text(
               latest,
               textDirection: TextDirection.ltr,
@@ -138,6 +142,7 @@ void main() {
             throw StateError('A');
           },
           builder: (context, latest) {
+            if (latest == null) return Container();
             return Text(
               latest,
               textDirection: TextDirection.ltr,
@@ -165,6 +170,7 @@ void main() {
         store: store,
         child: StoreBuilder<String>(
           builder: (context, store) {
+            if (store == null) return Container();
             return Text(
               store.state,
               textDirection: TextDirection.ltr,
@@ -231,7 +237,7 @@ void main() {
       await tester.pumpWidget(widget);
 
       // Check whether the store it captures is the same as the store created at the beginning
-      expect(StoreCaptorStateful.captorKey.currentState.store, store);
+      expect(StoreCaptorStateful.captorKey.currentState?.store, store);
     });
 
     testWidgets('does not rebuild if rebuildOnChange is set to false',
@@ -359,7 +365,7 @@ void main() {
 
     testWidgets('onInit is called before the first ViewModel is built',
         (WidgetTester tester) async {
-      String currentState;
+      String? currentState;
       final store = Store<String>(
         identityReducer,
         initialState: 'I',
@@ -553,7 +559,7 @@ void main() {
       testWidgets(
         'converter update results in proper rebuild',
         (WidgetTester tester) async {
-          String currentState;
+          String? currentState;
           final store = Store<String>(
             identityReducer,
             initialState: 'I',
@@ -589,12 +595,12 @@ void main() {
       testWidgets(
         'onDidChange works as expected',
         (WidgetTester tester) async {
-          String currentState;
+          String? currentState;
           final store = Store<String>(
             identityReducer,
             initialState: 'I',
           );
-          Widget widget([void Function(String viewModel) onDidChange]) {
+          Widget widget([void Function(String? viewModel)? onDidChange]) {
             return StoreProvider<String>(
               store: store,
               child: StoreConnector<String, String>(
@@ -632,13 +638,13 @@ void main() {
       testWidgets(
         'onWillChange works as expected',
         (WidgetTester tester) async {
-          String currentState;
+          String? currentState;
           final store = Store<String>(
             identityReducer,
             initialState: 'I',
           );
           Widget widget([
-            void Function(String prev, String current) onWillChange,
+            void Function(String? prev, String? current)? onWillChange,
           ]) {
             return StoreProvider<String>(
               store: store,
@@ -729,7 +735,7 @@ void main() {
     });
 
     testWidgets('runs a function before rebuild', (WidgetTester tester) async {
-      final counter = CallCounter<Store<String>>();
+      final counter = CallCounter<Store<String>?>();
       final store = Store(identityReducer, initialState: 'A');
 
       Widget widget() {
@@ -850,9 +856,12 @@ String selector(Store<String> store) => store.state;
 class StoreCaptor<S> extends StatelessWidget {
   static const Key captorKey = Key('StoreCaptor');
 
-  Store<S> store;
+  Store<S>? store;
 
-  StoreCaptor() : super(key: captorKey);
+  StoreCaptor({
+    Key? key,
+    this.store,
+  }) : super(key: captorKey);
 
   @override
   Widget build(BuildContext context) {
@@ -872,7 +881,7 @@ class StoreCaptorStateful extends StatefulWidget {
 }
 
 class _StoreCaptorStatefulState extends State<StoreCaptorStateful> {
-  Store<String> store;
+  late Store<String> store;
 
   @override
   void initState() {
@@ -891,12 +900,12 @@ String identityReducer(String state, dynamic action) {
 }
 
 class CallCounter<S> {
-  final List<S> states = [];
-  final List<S> states2 = [];
+  final List<S?> states = [];
+  final List<S?> states2 = [];
 
   int get callCount => states.length;
 
-  void call(S s1, [S s2]) {
+  void call(S s1, [S? s2]) {
     states.add(s1);
     states2.add(s2);
   }
